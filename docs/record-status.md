@@ -1,14 +1,10 @@
 # Record Status 設計
 
-record-idm が管理する `record_status` の設計と、各リポジトリの生 status からのマッピングを定義する。
-
-## 概要
+record-idm が管理する `record_status` の設計を定義する。2 次元モデルの全体像は [データモデル](./data-model.md) を参照。
 
 `record_status` は accession のデータ公開状態を表す。外の世界から見た「そのデータに到達できるか」を示す次元であり、INSDC 標準の 4 値を基本に DDBJ 内部管理用の値を拡張する。
 
-投稿処理の段階（submitted, in_curation 等）は別次元 `submission_stage` で管理する。詳細は [Submission Stage 設計](./submission-stage.md) を参照。
-
-参考: ddbj-search-converter の `schema.py` では `Status = Literal["live", "unpublished", "suppressed", "withdrawn"]`（INSDC 標準 4 値）として定義されている。record-idm はこれを拡張し、DDBJ 内部管理用の値を追加する。
+参考: ddbj-search-converter の `schema.py` では `Status = Literal["live", "unpublished", "suppressed", "withdrawn"]`（INSDC 標準 4 値）として定義されている。
 
 ## record_status の定義値
 
@@ -203,46 +199,7 @@ Excel メタデータの `Hold/Release` フィールド。
 | Release | `live` |
 | Hold | `unpublished` |
 
-## マッピング一覧（サマリ）
-
-| リポジトリ | 生 status | → record_status |
-|---|---|---|
-| Trad | public | `live` |
-| Trad | private | `unpublished` |
-| Trad | suppressed | `suppressed` |
-| Trad | secondary | `suppressed` + relation `replaced_by` |
-| Trad | killed | `withdrawn` |
-| Trad | unregistered | `unregistered` |
-| BioProject/BioSample | public (5500) | `live` |
-| BioProject/BioSample | submitted (5100) | `unpublished` |
-| BioProject/BioSample | curating (5200) | `unpublished` |
-| BioProject/BioSample | private (5400) | `unpublished` |
-| BioProject/BioSample | suppressed (5800) | `suppressed` |
-| BioProject/BioSample | killed (5600) | `withdrawn` |
-| BioProject/BioSample | canceled (5700) | `canceled` |
-| BioProject/BioSample | 5900 | ? |
-| SRA | live | `live` |
-| SRA | unpublished | `unpublished` |
-| SRA | suppressed | `suppressed` |
-| SRA | withdrawn | `withdrawn` |
-| SRA | replaced | `withdrawn` + relation `replaced_by` |
-| DRA | public | `live` |
-| DRA | suppressed | `suppressed` |
-| DRA | withdrawn | `withdrawn` |
-| GEA | Public | `live` |
-| GEA | Permanently Suppressed | `suppressed` |
-| GEA | Withdrawn | `withdrawn` |
-| JGA | 承認 (60) | `live` |
-| JGA | 申請中 (10-40) | `unpublished` |
-| JGA | 却下 (50) / 取り下げ (70) | `canceled` |
-| MetaboBank | Public | `live` |
-| MetaboBank | Private | `unpublished` |
-| MetaboBank | Temporarily/Permanently suppressed | `suppressed` |
-| MetaboBank | Cancelled | `canceled` |
-| MetaboBank | Killed | `withdrawn` |
-| MetaboBank | In review | `unpublished` |
-| JVar | Release | `live` |
-| JVar | Hold | `unpublished` |
+各リポジトリの生 status から `record_status` × `submission_stage` への統合マッピングは [データモデル](./data-model.md#各リポジトリの-status-マッピング) を参照。
 
 ## 検討事項
 

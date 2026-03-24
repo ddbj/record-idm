@@ -23,8 +23,9 @@ record-idm はこれらを統一的に扱い、以下を実現する:
 
 | ドキュメント | 内容 |
 |---|---|
-| [docs/record-status.md](docs/record-status.md) | `record_status` の定義値、INSDC 標準との対応、状態遷移、各リポジトリからのマッピング |
-| [docs/submission-stage.md](docs/submission-stage.md) | `submission_stage` の定義値、`record_status` との関係・制約、各リポジトリからのマッピング |
+| [docs/data-model.md](docs/data-model.md) | データモデル全体像。status の 2 次元モデル（`record_status` × `submission_stage`）、各リポジトリからのマッピング |
+| [docs/record-status.md](docs/record-status.md) | `record_status` の定義値、INSDC 標準との対応、状態遷移 |
+| [docs/submission-stage.md](docs/submission-stage.md) | `submission_stage` の定義値、状態遷移 |
 
 ### 調査
 
