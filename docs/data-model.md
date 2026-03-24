@@ -6,10 +6,10 @@ record-idm のデータモデルを定義する。
 
 record-idm は accession の状態を 2 つの次元で管理する。
 
-| 次元 | 意味 | 例 |
-|------|------|------|
-| [`record_status`](./record-status.md) | データの公開状態（外の世界から見た到達可能性） | live, suppressed, withdrawn |
-| [`submission_stage`](./submission-stage.md) | 投稿処理の段階（DDBJ 内部のワークフロー状態） | submitted, in_curation, accepted |
+| 次元                                        | 意味                                           | 例                               |
+| ------------------------------------------- | ---------------------------------------------- | -------------------------------- |
+| [`record_status`](./record-status.md)       | データの公開状態（外の世界から見た到達可能性） | live, suppressed, withdrawn      |
+| [`submission_stage`](./submission-stage.md) | 投稿処理の段階（DDBJ 内部のワークフロー状態）  | submitted, in_curation, accepted |
 
 ### なぜ 2 次元か
 
@@ -32,14 +32,14 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 2 つの次元は完全に独立ではなく、以下の制約がある。
 
-| record_status | 許容される submission_stage |
-|---|---|
-| `unpublished` | `draft`, `submitted`, `in_curation`, `revision_requested`, `accepted` |
-| `live` | `accepted` |
-| `suppressed` | `accepted` |
-| `withdrawn` | `accepted` |
-| `canceled` | `draft`, `submitted`, `in_curation`, `rejected` |
-| `unregistered` | null |
+| record_status  | 許容される submission_stage                                           |
+| -------------- | --------------------------------------------------------------------- |
+| `unpublished`  | `draft`, `submitted`, `in_curation`, `revision_requested`, `accepted` |
+| `live`         | `accepted`                                                            |
+| `suppressed`   | `accepted`                                                            |
+| `withdrawn`    | `accepted`                                                            |
+| `canceled`     | `draft`, `submitted`, `in_curation`, `rejected`                       |
+| `unregistered` | null                                                                  |
 
 - `submission_stage` は主に `unpublished` の内訳を詳細化する役割を持つ
 - 公開後（`live`, `suppressed`, `withdrawn`）は基本的に `accepted` 固定
@@ -53,76 +53,76 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 ソース: `manager` テーブルの `status` カラム
 
-| 生 status | → record_status | → submission_stage | 備考 |
-|---|---|---|---|
-| private (1001) | `unpublished` | null | hold 期間中 |
-| public (1002) | `live` | null | |
-| suppressed (1004) | `suppressed` | null | |
-| secondary (1005) | `suppressed` | null | relation `replaced_by` も設定する |
-| killed (1006) | `withdrawn` | null | |
-| unregistered (1007) | `unregistered` | null | |
+| Raw Status          | → record_status | → submission_stage | 備考                              |
+| ------------------- | --------------- | ------------------ | --------------------------------- |
+| private (1001)      | `unpublished`   | null               | hold 期間中                       |
+| public (1002)       | `live`          | null               |                                   |
+| suppressed (1004)   | `suppressed`    | null               |                                   |
+| secondary (1005)    | `suppressed`    | null               | relation `replaced_by` も設定する |
+| killed (1006)       | `withdrawn`     | null               |                                   |
+| unregistered (1007) | `unregistered`  | null               |                                   |
 
 ### BioProject / BioSample
 
 ソース: `mass.project` / `mass.sample` テーブルの `status_id` カラム
 
-| 生 status | → record_status | → submission_stage | 備考 |
-|---|---|---|---|
-| submitted (5100) | `unpublished` | `submitted` | |
-| curating (5200) | `unpublished` | `in_curation` | |
-| private (5400) | `unpublished` | `accepted` | accession 発行済み、hold 期間中 |
-| public (5500) | `live` | `accepted` | |
-| killed (5600) | `withdrawn` | `accepted` | |
-| canceled (5700) | `canceled` | null | |
-| suppressed (5800) | `suppressed` | `accepted` | |
-| 5900 | ? | ? | 要調査 |
+| Raw Status        | → record_status | → submission_stage | 備考                            |
+| ----------------- | --------------- | ------------------ | ------------------------------- |
+| submitted (5100)  | `unpublished`   | `submitted`        |                                 |
+| curating (5200)   | `unpublished`   | `in_curation`      |                                 |
+| private (5400)    | `unpublished`   | `accepted`         | accession 発行済み、hold 期間中 |
+| public (5500)     | `live`          | `accepted`         |                                 |
+| killed (5600)     | `withdrawn`     | `accepted`         |                                 |
+| canceled (5700)   | `canceled`      | null               |                                 |
+| suppressed (5800) | `suppressed`    | `accepted`         |                                 |
+| 5900              | ?               | ?                  | 要調査                          |
 
 ### SRA（全極、NCBI 作成）
 
 ソース: SRA_Accessions.tab の `Status` カラム
 
-| 生 status | → record_status | → submission_stage | 備考 |
-|---|---|---|---|
-| live | `live` | null | |
-| unpublished | `unpublished` | null | |
-| suppressed | `suppressed` | null | |
-| withdrawn | `withdrawn` | null | |
-| replaced | `withdrawn` | null | relation `replaced_by` も設定する |
+| Raw Status  | → record_status | → submission_stage | 備考                              |
+| ----------- | --------------- | ------------------ | --------------------------------- |
+| live        | `live`          | null               |                                   |
+| unpublished | `unpublished`   | null               |                                   |
+| suppressed  | `suppressed`    | null               |                                   |
+| withdrawn   | `withdrawn`     | null               |                                   |
+| replaced    | `suppressed`    | null               | relation `replaced_by` も設定する |
 
 ### DRA（自極、DDBJ 作成）
 
 ソース: DRA_Accessions.tab（公開済みのみ出力。未公開分は D-way 内で管理）
 
-| 生 status | → record_status | → submission_stage | 備考 |
-|---|---|---|---|
-| public | `live` | null | |
-| suppressed | `suppressed` | null | |
-| withdrawn | `withdrawn` | null | |
+| Raw Status | → record_status | → submission_stage | 備考 |
+| ---------- | --------------- | ------------------ | ---- |
+| public     | `live`          | null               |      |
+| suppressed | `suppressed`    | null               |      |
+| withdrawn  | `withdrawn`     | null               |      |
 
 ### GEA
 
 ソース: livelist ファイル（公開済みのみ）
 
-| 生 status | → record_status | → submission_stage | 備考 |
-|---|---|---|---|
-| Public | `live` | null | |
-| Permanently Suppressed | `suppressed` | null | |
-| Withdrawn | `withdrawn` | null | |
+| Raw Status             | → record_status | → submission_stage | 備考 |
+| ---------------------- | --------------- | ------------------ | ---- |
+| Public                 | `live`          | null               |      |
+| Permanently Suppressed | `suppressed`    | null               |      |
+| Withdrawn              | `withdrawn`     | null               |      |
 
 ### JGA
 
 ソース: 申請管理システムの `appl_status_type`（accession 未発行のものも管理対象）
 
-| 生 status | → record_status | → submission_stage | 備考 |
-|---|---|---|---|
-| 申請書類作成中 (10) | `unpublished` | `draft` | accession 未発行 |
-| 申請完了 (20) | `unpublished` | `submitted` | accession 未発行 |
-| 差し戻し中 (30) | `unpublished` | `revision_requested` | accession 未発行 |
-| 審査中 (40) | `unpublished` | `in_curation` | accession 未発行 |
-| 却下 (50) | `canceled` | `rejected` | accession 未発行 |
-| 承認 (60) | `live` | `accepted` | accession 発行済み |
-| 取り下げ (70) | `canceled` | null | accession 未発行 or 発行済み。要調査 |
-| 利用期間終了 (80) | TODO | TODO | 要調査 |
+| Raw Status          | → record_status | → submission_stage   | 備考                                 |
+| ------------------- | --------------- | -------------------- | ------------------------------------ |
+| 申請書類作成中 (10) | `unpublished`   | `draft`              | accession 未発行                     |
+| 申請完了 (20)       | `unpublished`   | `submitted`          | accession 未発行                     |
+| 差し戻し中 (30)     | `unpublished`   | `revision_requested` | accession 未発行                     |
+| 審査中 (40)         | `unpublished`   | `in_curation`        | accession 未発行                     |
+| 却下 (50)           | `canceled`      | `rejected`           | accession 未発行                     |
+| 承認 (60)           | `live`          | `accepted`           | accession 発行済み                   |
+| 取り下げ (70)       | `canceled`      | null                 | accession 未発行 or 発行済み。要調査 |
+| 利用期間終了 (80)   | TODO            | TODO                 | 要調査                               |
 
 ### AGD
 
@@ -132,24 +132,24 @@ JGA と同じ構成。
 
 ソース: study ディレクトリ内の status file
 
-| 生 status | → record_status | → submission_stage | 備考 |
-|---|---|---|---|
-| Public (Release Date あり) | `live` | `accepted` | |
-| Private (Release Date なし) | `unpublished` | `accepted` | |
-| In review | `unpublished` | `in_curation` | |
-| Cancelled | `canceled` | null | |
-| Killed | `withdrawn` | `accepted` | |
-| Temporarily suppressed | `suppressed` | `accepted` | |
-| Permanently suppressed | `suppressed` | `accepted` | |
+| Raw Status                  | → record_status | → submission_stage | 備考 |
+| --------------------------- | --------------- | ------------------ | ---- |
+| Public (Release Date あり)  | `live`          | `accepted`         |      |
+| Private (Release Date なし) | `unpublished`   | `accepted`         |      |
+| In review                   | `unpublished`   | `in_curation`      |      |
+| Cancelled                   | `canceled`      | null               |      |
+| Killed                      | `withdrawn`     | `accepted`         |      |
+| Temporarily suppressed      | `suppressed`    | `accepted`         |      |
+| Permanently suppressed      | `suppressed`    | `accepted`         |      |
 
 ### JVar
 
 ソース: Excel メタデータの `Hold/Release` フィールド
 
-| 生 status | → record_status | → submission_stage | 備考 |
-|---|---|---|---|
-| Release | `live` | null | |
-| Hold | `unpublished` | null | |
+| Raw Status | → record_status | → submission_stage | 備考 |
+| ---------- | --------------- | ------------------ | ---- |
+| Release    | `live`          | null               |      |
+| Hold       | `unpublished`   | null               |      |
 
 ## Relation
 

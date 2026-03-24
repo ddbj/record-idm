@@ -146,16 +146,16 @@ graph TD
 
 ddbj-search-converter の dblink には JGA の高レベル relation のみ格納される。experiment / sample / data / analysis 間の関係は CSV に存在するが dblink には含まれない。
 
-| from | to | 構築方法 |
-|---|---|---|
-| jga-dataset | jga-policy | CSV 直接 |
-| jga-policy | jga-dac | CSV 直接 |
-| jga-study | jga-dataset | CSV hop（2 経路の union） |
-| jga-study | jga-policy | CSV hop |
-| jga-study | jga-dac | CSV hop |
-| jga-dataset | jga-dac | CSV hop |
-| jga-study | hum-id | XML 直接 |
-| jga-study | pubmed-id | XML 直接 |
+| from        | to          | 構築方法                  |
+| ----------- | ----------- | ------------------------- |
+| jga-dataset | jga-policy  | CSV 直接                  |
+| jga-policy  | jga-dac     | CSV 直接                  |
+| jga-study   | jga-dataset | CSV hop（2 経路の union） |
+| jga-study   | jga-policy  | CSV hop                   |
+| jga-study   | jga-dac     | CSV hop                   |
+| jga-dataset | jga-dac     | CSV hop                   |
+| jga-study   | hum-id      | XML 直接                  |
+| jga-study   | pubmed-id   | XML 直接                  |
 
 ## JVar 内部 Relation
 
@@ -189,84 +189,84 @@ JVar は現在 dblink に含まれていない。
 
 ### リポジトリ間
 
-| from | to | データソース | dblink |
-|---|---|---|---|
-| bioproject | umbrella-bioproject | BioProject XML / DB `umbrella_info` | ✓ |
-| bioproject | hum-id | BioProject XML `LocalID` | ✓ |
-| bioproject | geo | BioProject XML `CenterID` | ✓ |
-| biosample | bioproject | BioSample DB/XML + SRA Accessions.tab | ✓ |
-| insdc-assembly | bioproject | assembly_summary_genbank.txt | ✓ |
-| insdc-assembly | biosample | assembly_summary_genbank.txt | ✓ |
-| insdc-assembly | insdc-master | assembly_summary_genbank.txt | ✓ |
-| insdc-master | bioproject | assembly_summary + Trad organism list | ✓ |
-| insdc-master | biosample | assembly_summary + Trad organism list | ✓ |
-| gea | bioproject | GEA IDF `Comment[BioProject]` | ✓ |
-| gea | biosample | GEA SDRF `Comment[BioSample]` | ✓ |
-| metabobank | bioproject | MetaboBank IDF `Comment[BioProject]` | ✓ |
-| metabobank | biosample | MetaboBank SDRF `Comment[BioSample]` | ✓ |
-| jga-study | hum-id | JGA XML `STUDY_ATTRIBUTES` | ✓ |
-| jga-study | pubmed-id | JGA XML `PUBLICATIONS` | ✓ |
-| trad | bioproject | Trad DB `link_pr_ac` + `project` | - |
-| trad | biosample | Trad DB `link_pr_ac` + `project` | - |
-| trad | sra-run | Trad DB `link_pr_ac` + `project` | - |
-| gea | sra-experiment | GEA SDRF `Comment[SRA_EXPERIMENT]` | - |
-| gea | sra-run | GEA SDRF `Comment[SRA_RUN]` | - |
-| jvar-study | bioproject | JVar Excel `BioProject Accession` | - |
-| jvar-sample | biosample | JVar Excel `BioSample Accession` | - |
+| from           | to                  | データソース                          | dblink |
+| -------------- | ------------------- | ------------------------------------- | ------ |
+| bioproject     | umbrella-bioproject | BioProject XML / DB `umbrella_info`   | ✓      |
+| bioproject     | hum-id              | BioProject XML `LocalID`              | ✓      |
+| bioproject     | geo                 | BioProject XML `CenterID`             | ✓      |
+| biosample      | bioproject          | BioSample DB/XML + SRA Accessions.tab | ✓      |
+| insdc-assembly | bioproject          | assembly_summary_genbank.txt          | ✓      |
+| insdc-assembly | biosample           | assembly_summary_genbank.txt          | ✓      |
+| insdc-assembly | insdc-master        | assembly_summary_genbank.txt          | ✓      |
+| insdc-master   | bioproject          | assembly_summary + Trad organism list | ✓      |
+| insdc-master   | biosample           | assembly_summary + Trad organism list | ✓      |
+| gea            | bioproject          | GEA IDF `Comment[BioProject]`         | ✓      |
+| gea            | biosample           | GEA SDRF `Comment[BioSample]`         | ✓      |
+| metabobank     | bioproject          | MetaboBank IDF `Comment[BioProject]`  | ✓      |
+| metabobank     | biosample           | MetaboBank SDRF `Comment[BioSample]`  | ✓      |
+| jga-study      | hum-id              | JGA XML `STUDY_ATTRIBUTES`            | ✓      |
+| jga-study      | pubmed-id           | JGA XML `PUBLICATIONS`                | ✓      |
+| trad           | bioproject          | Trad DB `link_pr_ac` + `project`      | -      |
+| trad           | biosample           | Trad DB `link_pr_ac` + `project`      | -      |
+| trad           | sra-run             | Trad DB `link_pr_ac` + `project`      | -      |
+| gea            | sra-experiment      | GEA SDRF `Comment[SRA_EXPERIMENT]`    | -      |
+| gea            | sra-run             | GEA SDRF `Comment[SRA_RUN]`           | -      |
+| jvar-study     | bioproject          | JVar Excel `BioProject Accession`     | -      |
+| jvar-sample    | biosample           | JVar Excel `BioSample Accession`      | -      |
 
 ### SRA 内部
 
 全て Accessions.tab 由来、全て dblink に格納。
 
-| from | to | 備考 |
-|---|---|---|
-| sra-submission | sra-study | |
-| sra-study | sra-experiment | |
-| sra-study | sra-analysis | |
-| sra-submission | sra-analysis | Study 空の場合の fallback |
-| sra-experiment | sra-run | |
-| sra-experiment | sra-sample | |
-| sra-run | sra-sample | |
-| bioproject | sra-study | |
-| bioproject | sra-experiment | denormalized |
-| bioproject | sra-run | denormalized |
-| bioproject | sra-analysis | denormalized |
-| biosample | sra-sample | |
-| biosample | sra-experiment | denormalized |
-| biosample | sra-run | denormalized |
-| biosample | sra-analysis | denormalized |
+| from           | to             | 備考                      |
+| -------------- | -------------- | ------------------------- |
+| sra-submission | sra-study      |                           |
+| sra-study      | sra-experiment |                           |
+| sra-study      | sra-analysis   |                           |
+| sra-submission | sra-analysis   | Study 空の場合の fallback |
+| sra-experiment | sra-run        |                           |
+| sra-experiment | sra-sample     |                           |
+| sra-run        | sra-sample     |                           |
+| bioproject     | sra-study      |                           |
+| bioproject     | sra-experiment | denormalized              |
+| bioproject     | sra-run        | denormalized              |
+| bioproject     | sra-analysis   | denormalized              |
+| biosample      | sra-sample     |                           |
+| biosample      | sra-experiment | denormalized              |
+| biosample      | sra-run        | denormalized              |
+| biosample      | sra-analysis   | denormalized              |
 
 ### JGA 内部
 
 CSV の参照方向（parent → child）で記載。
 
-| parent | child | CSV | dblink |
-|---|---|---|---|
-| study | experiment | experiment-study-relation.csv | - |
-| study | analysis | analysis-study-relation.csv | - |
-| experiment | data | data-experiment-relation.csv | - |
-| experiment | sample | experiment-sample-relation.csv | - |
-| dataset | data | dataset-data-relation.csv | - |
-| dataset | analysis | dataset-analysis-relation.csv | - |
-| dataset | policy | dataset-policy-relation.csv | ✓ |
-| policy | dac | policy-dac-relation.csv | ✓ |
-| analysis | sample | analysis-sample-relation.csv | - |
-| analysis | data | analysis-data-relation.csv | - |
+| parent     | child      | CSV                            | dblink |
+| ---------- | ---------- | ------------------------------ | ------ |
+| study      | experiment | experiment-study-relation.csv  | -      |
+| study      | analysis   | analysis-study-relation.csv    | -      |
+| experiment | data       | data-experiment-relation.csv   | -      |
+| experiment | sample     | experiment-sample-relation.csv | -      |
+| dataset    | data       | dataset-data-relation.csv      | -      |
+| dataset    | analysis   | dataset-analysis-relation.csv  | -      |
+| dataset    | policy     | dataset-policy-relation.csv    | ✓      |
+| policy     | dac        | policy-dac-relation.csv        | ✓      |
+| analysis   | sample     | analysis-sample-relation.csv   | -      |
+| analysis   | data       | analysis-data-relation.csv     | -      |
 
 dblink に格納される hop edge:
 
-| from | to | hop 経路 |
-|---|---|---|
-| jga-study | jga-dataset | study ← experiment ← data → dataset **∪** study ← analysis → dataset |
-| jga-study | jga-policy | study → dataset → policy |
-| jga-study | jga-dac | study → dataset → policy → dac |
-| jga-dataset | jga-dac | dataset → policy → dac |
+| from        | to          | hop 経路                                                             |
+| ----------- | ----------- | -------------------------------------------------------------------- |
+| jga-study   | jga-dataset | study ← experiment ← data → dataset **∪** study ← analysis → dataset |
+| jga-study   | jga-policy  | study → dataset → policy                                             |
+| jga-study   | jga-dac     | study → dataset → policy → dac                                       |
+| jga-dataset | jga-dac     | dataset → policy → dac                                               |
 
 ### JGA/AGD 申請管理
 
-| from | to | mechanism |
-|---|---|---|
-| J-DS | JGA submission | `submission_permission` テーブル |
-| J-DU | jga-dataset (JGAD) | `use_permission` テーブル |
-| JSUB | JGA submission | `accession.alias` マッピング |
-| JGA submission | hum-id | `metadata` XML の `nbdc_number` 属性 |
+| from           | to                 | mechanism                            |
+| -------------- | ------------------ | ------------------------------------ |
+| J-DS           | JGA submission     | `submission_permission` テーブル     |
+| J-DU           | jga-dataset (JGAD) | `use_permission` テーブル            |
+| JSUB           | JGA submission     | `accession.alias` マッピング         |
+| JGA submission | hum-id             | `metadata` XML の `nbdc_number` 属性 |
