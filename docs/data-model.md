@@ -66,16 +66,16 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 ソース: `mass.project` / `mass.sample` テーブルの `status_id` カラム
 
-| Raw Status        | → record_status | → submission_stage | 備考                            |
-| ----------------- | --------------- | ------------------ | ------------------------------- |
-| submitted (5100)  | `unpublished`   | `submitted`        |                                 |
-| curating (5200)   | `unpublished`   | `in_curation`      |                                 |
-| private (5400)    | `unpublished`   | `accepted`         | accession 発行済み、hold 期間中 |
-| public (5500)     | `live`          | `accepted`         |                                 |
-| killed (5600)     | `withdrawn`     | `accepted`         |                                 |
-| canceled (5700)   | `canceled`      | null               |                                 |
-| suppressed (5800) | `suppressed`    | `accepted`         |                                 |
-| temporarily_suppressed (5900) | `suppressed` | `accepted` | 一時的な非公開化（登録者依頼による再公開前提の suppress） |
+| Raw Status                    | → record_status | → submission_stage | 備考                                                      |
+| ----------------------------- | --------------- | ------------------ | --------------------------------------------------------- |
+| submitted (5100)              | `unpublished`   | `submitted`        |                                                           |
+| curating (5200)               | `unpublished`   | `in_curation`      |                                                           |
+| private (5400)                | `unpublished`   | `accepted`         | accession 発行済み、hold 期間中                           |
+| public (5500)                 | `live`          | `accepted`         |                                                           |
+| killed (5600)                 | `withdrawn`     | `accepted`         |                                                           |
+| canceled (5700)               | `canceled`      | null               |                                                           |
+| suppressed (5800)             | `suppressed`    | `accepted`         |                                                           |
+| temporarily_suppressed (5900) | `suppressed`    | `accepted`         | 一時的な非公開化（登録者依頼による再公開前提の suppress） |
 
 ### SRA（全極、NCBI 作成）
 
@@ -113,17 +113,17 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 ソース: 申請管理システムの `appl_status_type`（accession 未発行のものも管理対象）
 
-| Raw Status          | → record_status | → submission_stage   | 備考                                 |
-| ------------------- | --------------- | -------------------- | ------------------------------------ |
-| 申請書類作成中 (10) | `unpublished`   | `draft`              | accession 未発行                     |
-| 申請完了 (20)       | `unpublished`   | `submitted`          | accession 未発行                     |
-| 差し戻し中 (30)     | `unpublished`   | `revision_requested` | accession 未発行                     |
-| 審査中 (40)         | `unpublished`   | `in_curation`        | accession 未発行                     |
-| 却下 (50)           | `canceled`      | `rejected`           | accession 未発行                     |
-| 承認 (60)           | `live`          | `accepted`           | accession 発行済み                   |
-| 取り下げ (70)、accession 未発行 | `canceled` | null | accession は承認（60）後に付与される前提 |
-| 取り下げ (70)、accession 発行済み | `withdrawn` | `accepted` | 承認（60 = `live`）を経由した後の取り下げ |
-| 利用期間終了 (80)   | （対応不要）    | （対応不要）         | データ利用申請の status であり、レコード自体の公開状態ではない |
+| Raw Status                        | → record_status | → submission_stage   | 備考                                                           |
+| --------------------------------- | --------------- | -------------------- | -------------------------------------------------------------- |
+| 申請書類作成中 (10)               | `unpublished`   | `draft`              | accession 未発行                                               |
+| 申請完了 (20)                     | `unpublished`   | `submitted`          | accession 未発行                                               |
+| 差し戻し中 (30)                   | `unpublished`   | `revision_requested` | accession 未発行                                               |
+| 審査中 (40)                       | `unpublished`   | `in_curation`        | accession 未発行                                               |
+| 却下 (50)                         | `canceled`      | `rejected`           | accession 未発行                                               |
+| 承認 (60)                         | `live`          | `accepted`           | accession 発行済み                                             |
+| 取り下げ (70)、accession 未発行   | `canceled`      | null                 | accession は承認（60）後に付与される前提                       |
+| 取り下げ (70)、accession 発行済み | `withdrawn`     | `accepted`           | 承認（60 = `live`）を経由した後の取り下げ                      |
+| 利用期間終了 (80)                 | （対応不要）    | （対応不要）         | データ利用申請の status であり、レコード自体の公開状態ではない |
 
 ### AGD
 

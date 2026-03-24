@@ -180,11 +180,6 @@ graph TD
     dstd --- dss["SNP Variant (dss)"]
     dstd --- dssv["SV Variant Call (dssv)"]
     dstd --- dsv["SV Variant Region (dsv)"]
-
-    style Dataset fill:#f0f0f0,stroke:#999
-    style Experiment fill:#f0f0f0,stroke:#999
-    style SampleSet fill:#f0f0f0,stroke:#999
-    style Sample fill:#f0f0f0,stroke:#999
 ```
 
 ## Edge 一覧
@@ -244,7 +239,7 @@ graph TD
 
 CSV の参照方向（parent → child）で記載。
 
-| parent     | child      | CSV                            |
+| from       | to         | CSV                            |
 | ---------- | ---------- | ------------------------------ |
 | study      | experiment | experiment-study-relation.csv  |
 | study      | analysis   | analysis-study-relation.csv    |
