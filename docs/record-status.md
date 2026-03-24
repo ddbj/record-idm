@@ -57,7 +57,7 @@ stateDiagram-v2
     suppressed --> withdrawn: 恒久的な取り下げ
     unpublished --> canceled: 公開前の取り消し
 
-    note right of unregistered: 他の状態への遷移なし
+    unregistered: unregistered（他の状態への遷移なし）
 ```
 
 | 遷移 | 意味 |
