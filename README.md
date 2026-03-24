@@ -15,14 +15,21 @@ record-idm はこれらを統一的に扱い、以下を実現する:
 - accession と登録者（ddbj_account_id）の紐づけを管理する
 - status list の JSONL dump を提供する
 
-## 仕様書
+## 仕様書・調査ドキュメント
 
 `docs/` が各機能の SSOT（Single Source of Truth）となる。
+
+### 仕様
 
 | ドキュメント | 内容 |
 |---|---|
 | [docs/record-status.md](docs/record-status.md) | `record_status` の定義値、INSDC 標準との対応、状態遷移、各リポジトリからのマッピング |
 | [docs/submission-stage.md](docs/submission-stage.md) | `submission_stage` の定義値、`record_status` との関係・制約、各リポジトリからのマッピング |
+
+### 調査
+
+| ドキュメント | 内容 |
+|---|---|
 | [docs/repositories.md](docs/repositories.md) | 各リポジトリのデータソース（DB, ファイル）の所在と構造 |
 
 ## 参考資料
