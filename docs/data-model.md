@@ -38,12 +38,12 @@ record-idm は accession の状態を 2 つの次元で管理する。
 | `live`         | `accepted`                                                            |
 | `suppressed`   | `accepted`                                                            |
 | `withdrawn`    | `accepted`                                                            |
-| `canceled`     | `draft`, `submitted`, `in_curation`, `rejected`                       |
+| `canceled`     | null, `draft`, `submitted`, `in_curation`, `rejected`                 |
 | `unregistered` | null                                                                  |
 
 - `submission_stage` は主に `unpublished` の内訳を詳細化する役割を持つ
 - 公開後（`live`, `suppressed`, `withdrawn`）は基本的に `accepted` 固定
-- `canceled` は公開前に中止されたレコードであり、`submission_stage` は中止時点の段階を保持する
+- `canceled` は公開前に中止されたレコードであり、`submission_stage` は中止時点の段階を保持する。段階情報を持たないリポジトリ（BioProject/BioSample 等）では null となる
 
 ## 各リポジトリの status マッピング
 
@@ -121,8 +121,9 @@ record-idm は accession の状態を 2 つの次元で管理する。
 | 審査中 (40)         | `unpublished`   | `in_curation`        | accession 未発行                     |
 | 却下 (50)           | `canceled`      | `rejected`           | accession 未発行                     |
 | 承認 (60)           | `live`          | `accepted`           | accession 発行済み                   |
-| 取り下げ (70)       | `canceled`      | null                 | accession 未発行 or 発行済み。要調査 |
-| 利用期間終了 (80)   | TODO            | TODO                 | 要調査                               |
+| 取り下げ (70)、accession 未発行 | `canceled` | null | accession は承認（60）後に付与される前提 |
+| 取り下げ (70)、accession 発行済み | `withdrawn` | `accepted` | 承認（60 = `live`）を経由した後の取り下げ |
+| 利用期間終了 (80)   | （対応不要）    | （対応不要）         | データ利用申請の status であり、レコード自体の公開状態ではない |
 
 ### AGD
 
