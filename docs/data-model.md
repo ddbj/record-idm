@@ -8,7 +8,7 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 | 次元                                        | 意味                                           | 例                               |
 | ------------------------------------------- | ---------------------------------------------- | -------------------------------- |
-| [`record_status`](./record-status.md)       | データの公開状態（外の世界から見た到達可能性） | live, suppressed, withdrawn      |
+| [`record_status`](./record-status.md)       | データの公開状態（外の世界から見た到達可能性） | public, suppressed, withdrawn    |
 | [`submission_stage`](./submission-stage.md) | 投稿処理の段階（DDBJ 内部のワークフロー状態）  | submitted, in_curation, accepted |
 
 ### なぜ 2 次元か
@@ -26,7 +26,7 @@ record-idm は accession の状態を 2 つの次元で管理する。
 - [DDBJ-LD：レコードステイタス仕様書（2020）](https://ddbj-dev.atlassian.net/wiki/spaces/D/pages/328433665/DDBJ-LD) では、全ライフサイクルを 1 つの値（unsubmitted, submitted, private, public, suppressed, replaced, killed, cancel）にまとめ、`visibility` / `searchability` の boolean フラグで意味を補足する設計だった
 - `visibility` / `searchability` は `record_status` から導出可能なため、独立したプロパティとしては持たない
 - Schema.org は `creativeWorkStatus`（コンテンツのライフサイクル）と `actionStatus`（プロセスの実行状態）で暗黙的に 2 次元を分離している
-- [INSDC Status Document](https://www.insdc.org/submitting-standards/insdc-status-document/) は accession の公開状態（live, unpublished, suppressed, withdrawn）のみ標準化し、submission workflow は各アーカイブの内部実装に委ねている。record-idm はこの暗黙的な分離を明示化した形になる
+- [INSDC Status Document](https://www.insdc.org/submitting-standards/insdc-status-document/) は accession の公開状態（public, private, suppressed, withdrawn）のみ標準化し、submission workflow は各アーカイブの内部実装に委ねている。record-idm はこの暗黙的な分離を明示化した形になる
 
 ### record_status × submission_stage の制約
 
@@ -34,15 +34,15 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 | record_status  | 許容される submission_stage                                           |
 | -------------- | --------------------------------------------------------------------- |
-| `unpublished`  | `draft`, `submitted`, `in_curation`, `revision_requested`, `accepted` |
-| `live`         | `accepted`                                                            |
+| `private`      | `draft`, `submitted`, `in_curation`, `revision_requested`, `accepted` |
+| `public`       | `accepted`                                                            |
 | `suppressed`   | `accepted`                                                            |
 | `withdrawn`    | `accepted`                                                            |
 | `canceled`     | null, `draft`, `submitted`, `in_curation`, `rejected`                 |
 | `unregistered` | null                                                                  |
 
-- `submission_stage` は主に `unpublished` の内訳を詳細化する役割を持つ
-- 公開後（`live`, `suppressed`, `withdrawn`）は基本的に `accepted` 固定
+- `submission_stage` は主に `private` の内訳を詳細化する役割を持つ
+- 公開後（`public`, `suppressed`, `withdrawn`）は基本的に `accepted` 固定
 - `canceled` は公開前に中止されたレコードであり、`submission_stage` は中止時点の段階を保持する。段階情報を持たないリポジトリ（BioProject/BioSample 等）では null となる
 
 ## 各リポジトリの status マッピング
@@ -55,8 +55,8 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 | Raw Status          | → record_status | → submission_stage | 備考                              |
 | ------------------- | --------------- | ------------------ | --------------------------------- |
-| private (1001)      | `unpublished`   | （※）              | hold 期間中                       |
-| public (1002)       | `live`          | `accepted`         |                                   |
+| private (1001)      | `private`       | （※）              | hold 期間中                       |
+| public (1002)       | `public`        | `accepted`         |                                   |
 | suppressed (1004)   | `suppressed`    | `accepted`         |                                   |
 | secondary (1005)    | `suppressed`    | `accepted`         | relation `replaced_by` も設定する |
 | killed (1006)       | `withdrawn`     | `accepted`         |                                   |
@@ -79,10 +79,10 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 | Raw Status                    | → record_status | → submission_stage | 備考                                                      |
 | ----------------------------- | --------------- | ------------------ | --------------------------------------------------------- |
-| submitted (5100)              | `unpublished`   | `submitted`        |                                                           |
-| curating (5200)               | `unpublished`   | `in_curation`      |                                                           |
-| private (5400)                | `unpublished`   | `accepted`         | accession 発行済み、hold 期間中                           |
-| public (5500)                 | `live`          | `accepted`         |                                                           |
+| submitted (5100)              | `private`       | `submitted`        |                                                           |
+| curating (5200)               | `private`       | `in_curation`      |                                                           |
+| private (5400)                | `private`       | `accepted`         | accession 発行済み、hold 期間中                           |
+| public (5500)                 | `public`        | `accepted`         |                                                           |
 | killed (5600)                 | `withdrawn`     | `accepted`         |                                                           |
 | canceled (5700)               | `canceled`      | null               |                                                           |
 | suppressed (5800)             | `suppressed`    | `accepted`         |                                                           |
@@ -94,8 +94,8 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 | Raw Status  | → record_status | → submission_stage | 備考                              |
 | ----------- | --------------- | ------------------ | --------------------------------- |
-| live        | `live`          | null               |                                   |
-| unpublished | `unpublished`   | null               |                                   |
+| live        | `public`        | null               |                                   |
+| unpublished | `private`       | null               |                                   |
 | suppressed  | `suppressed`    | null               |                                   |
 | withdrawn   | `withdrawn`     | null               |                                   |
 | replaced    | `suppressed`    | null               | relation `replaced_by` も設定する |
@@ -106,17 +106,17 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 | Raw Status                 | → record_status | → submission_stage   | 備考                     |
 | -------------------------- | --------------- | -------------------- | ------------------------ |
-| 100 (draft)                | `unpublished`   | `draft`              |                          |
+| 100 (draft)                | `private`       | `draft`              |                          |
 | 190 (canceled)             | `canceled`      | null                 |                          |
-| 300 (submitted)            | `unpublished`   | `submitted`          |                          |
-| 380 (validated)            | `unpublished`   | `in_curation`        | 自動 validation 完了後   |
-| 390 (revision requested)   | `unpublished`   | `revision_requested` |                          |
-| 400 (processing)           | `unpublished`   | `in_curation`        | キュレーション処理中     |
-| 500 (accessioned)          | `unpublished`   | `accepted`           | accession 発行済み       |
-| 700 (held)                 | `unpublished`   | `accepted`           | hold 期間中              |
-| 750 (pre-release)          | `unpublished`   | `accepted`           | 公開処理中（中間状態）   |
+| 300 (submitted)            | `private`       | `submitted`          |                          |
+| 380 (validated)            | `private`       | `in_curation`        | 自動 validation 完了後   |
+| 390 (revision requested)   | `private`       | `revision_requested` |                          |
+| 400 (processing)           | `private`       | `in_curation`        | キュレーション処理中     |
+| 500 (accessioned)          | `private`       | `accepted`           | accession 発行済み       |
+| 700 (held)                 | `private`       | `accepted`           | hold 期間中              |
+| 750 (pre-release)          | `private`       | `accepted`           | 公開処理中（中間状態）   |
 | 770 (suppressed)           | `suppressed`    | `accepted`           |                          |
-| 800 (public)               | `live`          | `accepted`           |                          |
+| 800 (public)               | `public`        | `accepted`           |                          |
 | 1000 (withdrawn)           | `withdrawn`     | `accepted`           |                          |
 | 1100 / 1200 (intermediate) | （※）           | `accepted`           | suppress/withdraw 処理中 |
 
@@ -130,16 +130,16 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 | Raw Status                       | → record_status | → submission_stage   | 備考                     |
 | -------------------------------- | --------------- | -------------------- | ------------------------ |
-| 0 (created)                      | `unpublished`   | `draft`              |                          |
-| 10-60 (submit → validate → load) | `unpublished`   | `submitted`          | 自動処理パイプライン     |
-| 100-130 (errors)                 | `unpublished`   | `revision_requested` | 処理エラーによる差し戻し |
-| 200 (validated)                  | `unpublished`   | `in_curation`        |                          |
-| 210 (curating)                   | `unpublished`   | `in_curation`        |                          |
-| 220-240 (accession → data load)  | `unpublished`   | `accepted`           | accession 発行以降       |
-| 250 (data error)                 | `unpublished`   | `revision_requested` | データロードエラー       |
-| 260 (private)                    | `unpublished`   | `accepted`           | hold 期間中              |
-| 270 (wait release)               | `unpublished`   | `accepted`           | 公開待ち                 |
-| 300 (public)                     | `live`          | `accepted`           |                          |
+| 0 (created)                      | `private`       | `draft`              |                          |
+| 10-60 (submit → validate → load) | `private`       | `submitted`          | 自動処理パイプライン     |
+| 100-130 (errors)                 | `private`       | `revision_requested` | 処理エラーによる差し戻し |
+| 200 (validated)                  | `private`       | `in_curation`        |                          |
+| 210 (curating)                   | `private`       | `in_curation`        |                          |
+| 220-240 (accession → data load)  | `private`       | `accepted`           | accession 発行以降       |
+| 250 (data error)                 | `private`       | `revision_requested` | データロードエラー       |
+| 260 (private)                    | `private`       | `accepted`           | hold 期間中              |
+| 270 (wait release)               | `private`       | `accepted`           | 公開待ち                 |
+| 300 (public)                     | `public`        | `accepted`           |                          |
 | 400 (canceled)                   | `canceled`      | null                 |                          |
 | 410 (suppressed)                 | `suppressed`    | `accepted`           |                          |
 | 420 (killed)                     | `withdrawn`     | `accepted`           |                          |
@@ -152,14 +152,14 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 | Raw Status                        | → record_status | → submission_stage   | 備考                                                           |
 | --------------------------------- | --------------- | -------------------- | -------------------------------------------------------------- |
-| 申請書類作成中 (10)               | `unpublished`   | `draft`              | accession 未発行                                               |
-| 申請完了 (20)                     | `unpublished`   | `submitted`          | accession 未発行                                               |
-| 差し戻し中 (30)                   | `unpublished`   | `revision_requested` | accession 未発行                                               |
-| 審査中 (40)                       | `unpublished`   | `in_curation`        | accession 未発行                                               |
+| 申請書類作成中 (10)               | `private`       | `draft`              | accession 未発行                                               |
+| 申請完了 (20)                     | `private`       | `submitted`          | accession 未発行                                               |
+| 差し戻し中 (30)                   | `private`       | `revision_requested` | accession 未発行                                               |
+| 審査中 (40)                       | `private`       | `in_curation`        | accession 未発行                                               |
 | 却下 (50)                         | `canceled`      | `rejected`           | accession 未発行                                               |
-| 承認 (60)                         | `live`          | `accepted`           | accession 発行済み                                             |
+| 承認 (60)                         | `public`        | `accepted`           | accession 発行済み                                             |
 | 取り下げ (70)、accession 未発行   | `canceled`      | null                 | accession は承認（60）後に付与される前提                       |
-| 取り下げ (70)、accession 発行済み | `withdrawn`     | `accepted`           | 承認（60 = `live`）を経由した後の取り下げ                      |
+| 取り下げ (70)、accession 発行済み | `withdrawn`     | `accepted`           | 承認（60 = `public`）を経由した後の取り下げ                    |
 | 利用期間終了 (80)                 | （対応不要）    | （対応不要）         | データ利用申請の status であり、レコード自体の公開状態ではない |
 
 ### AGD
@@ -172,9 +172,9 @@ JGA と同じ構成。
 
 | Raw Status                  | → record_status | → submission_stage | 備考 |
 | --------------------------- | --------------- | ------------------ | ---- |
-| Public (Release Date あり)  | `live`          | `accepted`         |      |
-| Private (Release Date なし) | `unpublished`   | `accepted`         |      |
-| In review                   | `unpublished`   | `in_curation`      |      |
+| Public (Release Date あり)  | `public`        | `accepted`         |      |
+| Private (Release Date なし) | `private`       | `accepted`         |      |
+| In review                   | `private`       | `in_curation`      |      |
 | Cancelled                   | `canceled`      | null               |      |
 | Killed                      | `withdrawn`     | `accepted`         |      |
 | Temporarily suppressed      | `suppressed`    | `accepted`         |      |
@@ -186,8 +186,8 @@ JGA と同じ構成。
 
 | Raw Status | → record_status | → submission_stage | 備考 |
 | ---------- | --------------- | ------------------ | ---- |
-| Release    | `live`          | null               |      |
-| Hold       | `unpublished`   | null               |      |
+| Release    | `public`        | null               |      |
+| Hold       | `private`       | null               |      |
 
 ## Relation
 
