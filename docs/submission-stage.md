@@ -30,7 +30,7 @@ stateDiagram-v2
 ## TODO
 
 - [ ] D-way (tracesys) の DB スキーマを調査し、Trad / SRA / DRA / GEA の submission_stage が取得可能か確認する
-- [ ] BioProject/BioSample `5900` の意味を調査する
+- [x] BioProject/BioSample `5900` の意味を調査する → `temporarily_suppressed`（一時的な非公開化）。`record_status = suppressed` にマッピング
 - [ ] BioProject/BioSample の `mass.submission` テーブルの `status_id`（100〜750）と `submission_stage` の関係を調査する
 - [ ] JGA `appl_status_type = 70`（取り下げ）で accession 発行済みのケースがあるか調査する
 - [ ] JGA `appl_status_type = 80`（利用期間終了）の record_status / submission_stage を決定する

@@ -75,7 +75,7 @@ record-idm は accession の状態を 2 つの次元で管理する。
 | killed (5600)     | `withdrawn`     | `accepted`         |                                 |
 | canceled (5700)   | `canceled`      | null               |                                 |
 | suppressed (5800) | `suppressed`    | `accepted`         |                                 |
-| 5900              | ?               | ?                  | 要調査                          |
+| temporarily_suppressed (5900) | `suppressed` | `accepted` | 一時的な非公開化（登録者依頼による再公開前提の suppress） |
 
 ### SRA（全極、NCBI 作成）
 

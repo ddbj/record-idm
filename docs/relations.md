@@ -16,20 +16,29 @@ DDBJ の各リポジトリが管理する accession 間の relation を定義す
 BioProject を頂点として、各リポジトリの accession がどのように紐づくかの概要。
 
 ```mermaid
+%%{ init: { "flowchart": { "curve": "linear" } } }%%
 graph TD
     BP_U[umbrella-bioproject] -->|child| BP[bioproject]
     BP --> BS[biosample]
 
-    BP --> DRP[sra-study]
-    BS --> DRS[sra-sample]
+    subgraph SRA
+        DRA[sra-submission] --> DRP[sra-study]
+        DRA -.-> DRZ[sra-analysis]
+        DRP --> DRX[sra-experiment]
+        DRP --> DRZ
+        DRX --> DRR[sra-run]
+        DRX --> DRS[sra-sample]
+        DRR --> DRS
+    end
 
-    DRA[sra-submission] --> DRP
-    DRA -.-> DRZ
-    DRP --> DRX[sra-experiment]
-    DRP --> DRZ[sra-analysis]
-    DRX --> DRR[sra-run]
-    DRX --> DRS
-    DRR --> DRS
+    BP --> DRP
+    BS --> DRS
+
+    subgraph JGA
+        JGAS[jga-study] --> JGAD[jga-dataset]
+        JGAD --> JGAP[jga-policy]
+        JGAP --> JGAC[jga-dac]
+    end
 
     BP -.-> Trad[trad]
     BS -.-> Trad
@@ -42,10 +51,6 @@ graph TD
 
     BP --> MB[metabobank]
     BS --> MB
-
-    JGAS[jga-study] --> JGAD[jga-dataset]
-    JGAD --> JGAP[jga-policy]
-    JGAP --> JGAC[jga-dac]
 
     BP -.-> dstd[jvar-study]
     BS -.-> JVSmp[jvar-sample]

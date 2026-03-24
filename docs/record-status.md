@@ -124,6 +124,6 @@ controlled-access データ固有の検討事項:
 
 [data-model.md](./data-model.md) の制約テーブルでは `canceled` に対して `draft`, `submitted`, `in_curation`, `rejected` を許容している。しかし、BioProject/BioSample の `canceled (5700)` は取り消し時点の段階が不明であり `submission_stage = null` としている。取り消し時点の段階情報を持たないリポジトリでは null を許容するか、制約テーブル側を見直すか、要検討。
 
-### 5. BioProject/BioSample `5900` の意味
+### 5. BioProject/BioSample `5900` = `temporarily_suppressed`
 
-BioProject 97 件、BioSample 4,103 件。意味が不明。要調査。
+BioProject 97 件、BioSample 4,103 件。D-way action_history の `[PSM:UpdateRecord] Project Status update to TemporarilySuppressed` から、一時的な非公開化（temporarily suppressed）であることが判明。登録者からの「論文投稿遅延」等の依頼により、再公開を前提として一時的に suppress されたレコード。livelist 上は `suppressed` として出力されるため、`record_status = suppressed` にマッピングする（5800 の通常 suppress と同じ扱い）。
