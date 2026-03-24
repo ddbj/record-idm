@@ -6,22 +6,22 @@ DDBJ が管理するリポジトリと、各リポジトリの管理 DB・ファ
 
 **INSDC データ交換対象リポジトリ**
 
-| リポジトリ | 自極データ                                | 他極データ                                        | 登録口           | 備考                        |
-| ---------- | ----------------------------------------- | ------------------------------------------------- | ---------------- | --------------------------- |
-| Trad       | PostgreSQL (g-actual, e-actual, w-actual) | GenBank flatfile, EMBL flatfile                   | D-way (NSSS/MSS) | ~1.87 億件、塩基配列        |
-| BioProject | PostgreSQL (a011:54306), XML, livelist    | BP XML (3.6 GB)                                   | D-way            | 自極 ~4.2 万                |
-| BioSample  | PostgreSQL (a011:54306), XML, livelist    | BS XML (4.3 GB gz)                                | D-way            | 自極 ~187 万、全極 ~4000 万 |
-| SRA (DRA)  | DRA_Accessions.tab, DRA_Metadata.tar      | SRA_Accessions.tab (30 GB), NCBI_SRA_Metadata.tar | D-way            | 全極 ~1.44 億、自極 ~230 万 |
+| リポジトリ | 自極データ                                                           | 他極データ                                        | 登録口           | 備考                        |
+| ---------- | -------------------------------------------------------------------- | ------------------------------------------------- | ---------------- | --------------------------- |
+| Trad       | PostgreSQL (g-actual, e-actual, w-actual)                            | GenBank flatfile, EMBL flatfile                   | D-way (NSSS/MSS) | ~1.87 億件、塩基配列        |
+| BioProject | PostgreSQL (a011:54306), XML, livelist                               | BP XML (3.6 GB)                                   | D-way            | 自極 ~4.2 万                |
+| BioSample  | PostgreSQL (a011:54306), XML, livelist                               | BS XML (4.3 GB gz)                                | D-way            | 自極 ~187 万、全極 ~4000 万 |
+| SRA (DRA)  | PostgreSQL (drmdb, a011:54306), DRA_Accessions.tab, DRA_Metadata.tar | SRA_Accessions.tab (30 GB), NCBI_SRA_Metadata.tar | D-way            | 全極 ~1.44 億、自極 ~230 万 |
 
 **DDBJ 独自リポジトリ**
 
-| リポジトリ | DB / データソース                     | 備考                                        |
-| ---------- | ------------------------------------- | ------------------------------------------- |
-| GEA        | IDF/SDRF + livelist                   | ~682 件                                     |
-| JGA        | XML + CSV（申請管理システムから出力） | ~531 study, ~664 dataset, controlled-access |
-| AGD        | PostgreSQL（申請管理システム）        | JGA とほぼ同じ構成                          |
-| MetaboBank | IDF/SDRF                              | ~156 study、メタボロミクス                  |
-| JVar       | ファイルベース                        | 2 study 公開中、将来 dbSNP/dbVar と交換予定 |
+| リポジトリ | DB / データソース                                   | 備考                                        |
+| ---------- | --------------------------------------------------- | ------------------------------------------- |
+| GEA        | PostgreSQL (dordb, a011:54306), IDF/SDRF + livelist | ~682 件                                     |
+| JGA        | XML + CSV（申請管理システムから出力）               | ~531 study, ~664 dataset, controlled-access |
+| AGD        | PostgreSQL（申請管理システム）                      | JGA とほぼ同じ構成                          |
+| MetaboBank | IDF/SDRF                                            | ~156 study、メタボロミクス                  |
+| JVar       | ファイルベース                                      | 2 study 公開中、将来 dbSNP/dbVar と交換予定 |
 
 **参照データ**
 
@@ -73,6 +73,41 @@ DAG edges:
 
 `accession` → `link_pr_ac` → `project` テーブルの JOIN で BioProject / BioSample（/ DRR）への紐づけが取れる。`project.project_id` に `PRJDB*` や `SAMD*`, `DRR*` などが入っている。
 
+##### submission_stage
+
+`dataflow` テーブルが accession 単位の作業ログを記録しており、最新レコードの status から `submission_stage` を導出できる。ただし、全 accession に `dataflow` レコードがあるとは限らないため、`submission_stage` は nullable。1 accession あたり最大 276 件のレコードが存在する細粒度なログ。
+
+`dataflow` テーブル:
+
+| カラム   | 型        | 説明                                             |
+| -------- | --------- | ------------------------------------------------ |
+| `ac_id`  | bigint    | accession ID（`accession` テーブルの FK）        |
+| `df_id`  | bigint    | フロー連番                                       |
+| `status` | smallint  | ステータスコード（43 種、`status` テーブル参照） |
+| `worker` | char      | 作業者                                           |
+| `m_date` | timestamp | 操作日時                                         |
+| `dt_id`  | bigint    | 詳細 ID（`df_detail` テーブルの FK）             |
+
+主要な status code のグループ分け:
+
+| status code group            | 意味                            | → submission_stage   |
+| ---------------------------- | ------------------------------- | -------------------- |
+| 1001-1003                    | received / acknowledged         | `submitted`          |
+| 1007-1011                    | annotation / review             | `in_curation`        |
+| 1012                         | sent to submitter（差し戻し）   | `revision_requested` |
+| 1030                         | return from reviewer            | `in_curation`        |
+| 1033, 1036, 1004, 1005       | all done / ready for release    | `accepted`           |
+| 1050, 1051, 1052, 1053, 1054 | suppress / kill / unregister 等 | （record_status 側） |
+
+`newdata_flow` テーブルで D-way の submission ID（`SUB*`）と g-actual の accession を対応付けできる:
+
+| カラム       | 型      | 説明                                               |
+| ------------ | ------- | -------------------------------------------------- |
+| `nf_id`      | bigint  | フロー ID                                          |
+| `sb_id`      | bigint  | `submission` テーブルの FK                         |
+| `sub_name`   | varchar | D-way submission ID（例: `SUB00274318`）           |
+| `accessions` | varchar | 割り当て accession 範囲（例: `LC922287-LC922290`） |
+
 ##### 主要テーブル
 
 | テーブル            | 用途                                                                      |
@@ -83,6 +118,8 @@ DAG edges:
 | `project`           | pr_id ↔ project_id（BioProject/BioSample 等）のマッピング                 |
 | `suppresskill_list` | suppressed / secondary の accession 一覧（accession, m_date, status）     |
 | `status`            | 全テーブル共通の enum 定義マスタ                                          |
+| `dataflow`          | accession 単位の作業ログ（submission_stage のソース）                     |
+| `newdata_flow`      | D-way submission ID (SUB\*) と accession の紐づけ                         |
 
 #### 他極データ
 
@@ -309,7 +346,78 @@ public + suppressed + withdrawn で ~843,949 件。
 
 #### 自極データ
 
-専用の PostgreSQL はない。D-way (tracesys) が DRA_Accessions.tab を生成し、これが自極の status / relation のソースとなる。
+##### drmdb（D-way 管理 DB）
+
+PostgreSQL `@a011:54306` DB 名 `drmdb`、スキーマ `mass`。D-way (tracesys) が DRA の submission ワークフローを管理する DB。DRA_Accessions.tab は drmdb から生成される公開済みデータのスナップショット。
+
+- 接続: `postgresql://guestuser:guestuser@a011:54306/drmdb`
+
+###### submission_stage
+
+`mass.submission` テーブルには status カラムがなく、`mass.status_history` テーブルが event sourcing 形式で status 遷移を記録する。最新レコード（`date DESC, status DESC` で rank=1）が現在の status。ステータスマスタテーブルは存在せず、コードはアプリケーション埋め込み。
+
+status code 一覧:
+
+| status | 意味               | 現在件数 | → submission_stage   |
+| ------ | ------------------ | -------- | -------------------- |
+| 100    | draft              | 26,581   | `draft`              |
+| 190    | canceled           | 3        | null                 |
+| 300    | submitted          | 710      | `submitted`          |
+| 380    | validated          | 4        | `in_curation`        |
+| 390    | revision requested | 97       | `revision_requested` |
+| 400    | processing         | 53       | `in_curation`        |
+| 500    | accessioned        | 3        | `accepted`           |
+| 700    | held               | 3,291    | `accepted`           |
+| 750    | pre-release        | （※）    | `accepted`           |
+| 770    | suppressed         | 117      | `accepted`           |
+| 800    | public             | 22,772   | `accepted`           |
+| 1000   | withdrawn          | 3,124    | `accepted`           |
+| 1100   | intermediate       | 46       | `accepted`           |
+| 1200   | intermediate       | 4        | `accepted`           |
+
+（※）750 は 700 → 800 の中間状態であり、最新ステータスとしてはカウントされない。
+
+典型的なワークフロー遷移:
+
+```mermaid
+stateDiagram-v2
+    100 --> 300: submit
+    100 --> 190: cancel
+    300 --> 380: validate
+    300 --> 390: revision request
+    390 --> 300: resubmit
+    380 --> 400: process
+    400 --> 500: accession
+    500 --> 700: hold
+    700 --> 750: pre-release
+    750 --> 800: publish
+    800 --> 770: suppress
+    800 --> 1000: withdraw
+```
+
+差し戻しループ: 300 ⇄ 390 は複数回発生する場合がある。200 / 600 は初期（2009-2010）のみ使用された旧ステータス。
+
+###### 主要テーブル
+
+| テーブル                  | 用途                                                                |
+| ------------------------- | ------------------------------------------------------------------- |
+| `mass.submission`         | submission 本体（sub_id, submitter_id, create/submit/hold_date 等） |
+| `mass.status_history`     | status 変更履歴（event sourcing、sub_id + status + date）           |
+| `mass.submission_group`   | submission のバージョン管理                                         |
+| `mass.accession_entity`   | accession 本体（DRA/DRX/DRR/DRS/DRP/DRZ、is_delete/was_public）     |
+| `mass.accession_relation` | SRA 内部の accession 間親子関係                                     |
+| `mass.ext_entity`         | 外部参照（PSUB/SSUB との紐づけ）                                    |
+| `mass.ext_relation`       | 外部エンティティとの関係                                            |
+| `mass.meta_entity`        | メタデータ XML                                                      |
+
+###### 主要ビュー
+
+| ビュー                                   | 用途                                                     |
+| ---------------------------------------- | -------------------------------------------------------- |
+| `mass.dra_summary`                       | submission + 最新 status + accession + BioProject の結合 |
+| `mass.current_dra_submission_group_view` | 最新バージョンの submission_group                        |
+| `mass.dra_accession_view`                | accession 一覧                                           |
+| `mass.dra_accession_meta_view`           | accession + メタデータ XML の結合                        |
 
 ##### DRA XML
 
@@ -429,7 +537,138 @@ accession パターン: `^E-GEAD-\d+$`。他極データなし。~682 件。
 
 #### データソース
 
-専用の PostgreSQL はない。IDF/SDRF ファイルと livelist がソース。
+##### dordb（D-way 管理 DB）
+
+PostgreSQL `@a011:54306` DB 名 `dordb`、スキーマ `mass`。D-way (tracesys) が GEA の submission ワークフローを管理する DB。livelist は dordb から生成される公開済みデータのスナップショット。
+
+- 接続: `postgresql://guestuser:guestuser@a011:54306/dordb`
+
+2 レベルの status 構造を持つ:
+
+- `submission_status_history`: submission 単位のワークフロー状態（record-idm の `submission_stage` ソース）
+- `object_status_history`: accession 単位の公開状態（record-idm の `record_status` の補助ソース）
+
+###### submission_status
+
+`mass.submission_status_history` テーブルで submission 単位のワークフロー状態を記録。`mass.current_submission_status` ビューで最新状態を取得できる。ステータスマスタテーブルは存在しない。
+
+submission_status_type 一覧:
+
+| status | 意味               | → submission_stage   | 備考               |
+| ------ | ------------------ | -------------------- | ------------------ |
+| 0      | created            | `draft`              |                    |
+| 10     | data submitted     | `submitted`          |                    |
+| 20     | preparing          | `submitted`          | 自動処理           |
+| 30     | transferring       | `submitted`          | 自動処理           |
+| 40     | scanning           | `submitted`          | 自動処理           |
+| 50     | validating         | `submitted`          | 自動処理           |
+| 60     | loading            | `submitted`          | 自動処理           |
+| 100    | preparation error  | `revision_requested` |                    |
+| 110    | scanning error     | `revision_requested` |                    |
+| 120    | validation error   | `revision_requested` |                    |
+| 130    | transfer error     | `revision_requested` |                    |
+| 200    | data validated     | `in_curation`        |                    |
+| 210    | curating           | `in_curation`        |                    |
+| 220    | accession assigned | `accepted`           |                    |
+| 230    | metadata loaded    | `accepted`           |                    |
+| 240    | data loading       | `accepted`           |                    |
+| 250    | data error         | `revision_requested` | データロードエラー |
+| 260    | private            | `accepted`           | hold 期間中        |
+| 270    | wait for release   | `accepted`           | 公開待ち           |
+| 300    | public             | `accepted`           |                    |
+| 400    | canceled           | null                 |                    |
+| 410    | suppressed         | `accepted`           |                    |
+| 420    | killed             | `accepted`           |                    |
+
+典型的なワークフロー遷移:
+
+```mermaid
+stateDiagram-v2
+    0 --> 10: submit
+    10 --> 20: prepare
+    20 --> 30: transfer
+    30 --> 40: scan
+    40 --> 50: validate
+    50 --> 60: load
+    60 --> 200: validated
+    200 --> 210: curate
+    210 --> 220: accession
+    220 --> 230: metadata
+    230 --> 240: data load
+    240 --> 260: private
+    260 --> 270: wait release
+    270 --> 300: publish
+    300 --> 410: suppress
+    300 --> 420: kill
+    20 --> 100: prep error
+    40 --> 110: scan error
+    50 --> 120: validation error
+    60 --> 130: transfer error
+    230 --> 250: data error
+```
+
+エラー系（100-130, 250）は差し戻し後に再投稿可能。400 (canceled) は多くの状態から遷移可能。
+
+###### object_status
+
+`mass.object_status_history` テーブルで accession 単位の公開状態を記録。後半のステータス（260-420）のみ。
+
+| status | 意味             | 件数   |
+| ------ | ---------------- | ------ |
+| 260    | private          | 38,929 |
+| 270    | wait for release | 24,678 |
+| 300    | public           | 5,605  |
+| 400    | canceled         | 923    |
+| 410    | suppressed       | 81     |
+| 420    | killed           | 17     |
+
+###### submission_type / accession_type
+
+submission_type:
+
+| type | 件数  | 意味         |
+| ---- | ----- | ------------ |
+| 1    | 635   | Microarray   |
+| 2    | 1,532 | Sequencing   |
+| 3    | 9     | Array Design |
+| 4    | 9     | Update       |
+
+accession_type:
+
+| type | prefix    | 件数   | 意味                       |
+| ---- | --------- | ------ | -------------------------- |
+| 1    | E-GEAD-   | 1,063  | GEA Experiment（本体）     |
+| 2    | P-GEAD-   | 6,266  | Protocol                   |
+| 3    | A-GEA- 等 | 316    | Array Design               |
+| 7    | DRX       | 7,196  | DRA Experiment（外部参照） |
+| 9    | DRR       | 7,403  | DRA Run（外部参照）        |
+| 11   | PRJDB     | 840    | BioProject（外部参照）     |
+| 12   | SAMD      | 15,883 | BioSample（外部参照）      |
+| 18   | CBX       | 254    | CIBEX（レガシー）          |
+
+###### 主要テーブル
+
+| テーブル                         | 用途                              |
+| -------------------------------- | --------------------------------- |
+| `mass.submission`                | submission 本体                   |
+| `mass.submission_status_history` | submission 単位の status 変更履歴 |
+| `mass.accession`                 | accession 本体                    |
+| `mass.object_status_history`     | accession 単位の status 変更履歴  |
+| `mass.object_group`              | オブジェクトグループ              |
+| `mass.relation`                  | GEA 内部の relation               |
+| `mass.secondary_relation`        | 二次的な relation                 |
+| `mass.metadata`                  | メタデータ                        |
+| `mass.file`                      | ファイル管理                      |
+
+###### 主要ビュー
+
+| ビュー                           | 用途                     |
+| -------------------------------- | ------------------------ |
+| `mass.current_submission_status` | 最新の submission status |
+| `mass.current_object_status`     | 最新の object status     |
+| `mass.current_metadata`          | 最新のメタデータ         |
+
+##### IDF/SDRF ファイル
 
 ベースパス: `/usr/local/resources/gea/experiment/`
 
@@ -442,9 +681,9 @@ E-GEAD-{N000}/
     E-GEAD-{NNNN}.processed.zip
 ```
 
-##### status
+##### livelist
 
-livelist ファイル（`/usr/local/resources/gea/experiment/livelist.txt`）で管理。TSV 形式。
+livelist ファイル（`/usr/local/resources/gea/experiment/livelist.txt`）で管理。公開済みデータのみ。TSV 形式。
 
 | カラム    | 内容                                        |
 | --------- | ------------------------------------------- |

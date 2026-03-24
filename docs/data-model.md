@@ -51,16 +51,27 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 ### Trad
 
-ソース: `manager` テーブルの `status` カラム
+ソース: `manager` テーブルの `status` カラム（record_status）+ `dataflow` テーブル（submission_stage、nullable）
 
 | Raw Status          | → record_status | → submission_stage | 備考                              |
 | ------------------- | --------------- | ------------------ | --------------------------------- |
-| private (1001)      | `unpublished`   | null               | hold 期間中                       |
-| public (1002)       | `live`          | null               |                                   |
-| suppressed (1004)   | `suppressed`    | null               |                                   |
-| secondary (1005)    | `suppressed`    | null               | relation `replaced_by` も設定する |
-| killed (1006)       | `withdrawn`     | null               |                                   |
+| private (1001)      | `unpublished`   | （※）              | hold 期間中                       |
+| public (1002)       | `live`          | `accepted`         |                                   |
+| suppressed (1004)   | `suppressed`    | `accepted`         |                                   |
+| secondary (1005)    | `suppressed`    | `accepted`         | relation `replaced_by` も設定する |
+| killed (1006)       | `withdrawn`     | `accepted`         |                                   |
 | unregistered (1007) | `unregistered`  | null               |                                   |
+
+（※）`private` の `submission_stage` は `dataflow` テーブルの最新ステータスから導出する。`dataflow` は accession 単位の細粒度な作業ログであり、全 accession にレコードがあるとは限らないため、取得できない場合は null となる。
+
+| dataflow status group                     | → submission_stage   |
+| ----------------------------------------- | -------------------- |
+| 1001-1003（received / acknowledged）      | `submitted`          |
+| 1007-1011（annotation / review）          | `in_curation`        |
+| 1012（sent to submitter）                 | `revision_requested` |
+| 1030（return from reviewer）              | `in_curation`        |
+| 1033 以降（all done / ready for release） | `accepted`           |
+| レコードなし                              | null                 |
 
 ### BioProject / BioSample
 
@@ -91,23 +102,49 @@ record-idm は accession の状態を 2 つの次元で管理する。
 
 ### DRA（自極、DDBJ 作成）
 
-ソース: DRA_Accessions.tab（公開済みのみ出力。未公開分は D-way 内で管理）
+ソース: drmdb `mass.status_history` テーブル（event sourcing、最新 status で判定）
 
-| Raw Status | → record_status | → submission_stage | 備考 |
-| ---------- | --------------- | ------------------ | ---- |
-| public     | `live`          | null               |      |
-| suppressed | `suppressed`    | null               |      |
-| withdrawn  | `withdrawn`     | null               |      |
+| Raw Status                 | → record_status | → submission_stage   | 備考                     |
+| -------------------------- | --------------- | -------------------- | ------------------------ |
+| 100 (draft)                | `unpublished`   | `draft`              |                          |
+| 190 (canceled)             | `canceled`      | null                 |                          |
+| 300 (submitted)            | `unpublished`   | `submitted`          |                          |
+| 380 (validated)            | `unpublished`   | `in_curation`        | 自動 validation 完了後   |
+| 390 (revision requested)   | `unpublished`   | `revision_requested` |                          |
+| 400 (processing)           | `unpublished`   | `in_curation`        | キュレーション処理中     |
+| 500 (accessioned)          | `unpublished`   | `accepted`           | accession 発行済み       |
+| 700 (held)                 | `unpublished`   | `accepted`           | hold 期間中              |
+| 750 (pre-release)          | `unpublished`   | `accepted`           | 公開処理中（中間状態）   |
+| 770 (suppressed)           | `suppressed`    | `accepted`           |                          |
+| 800 (public)               | `live`          | `accepted`           |                          |
+| 1000 (withdrawn)           | `withdrawn`     | `accepted`           |                          |
+| 1100 / 1200 (intermediate) | （※）           | `accepted`           | suppress/withdraw 処理中 |
+
+（※）1100/1200 は公開後の管理操作（suppress/withdraw 処理の中間状態）。record_status は遷移元に依存する。
+
+注: DRA_Accessions.tab は公開済みデータのみ出力するファイルであり、`public` / `suppressed` / `withdrawn` の 3 status のみ含む。record-idm は drmdb を正規ソースとし、未公開分を含む全ライフサイクルをカバーする。
 
 ### GEA
 
-ソース: livelist ファイル（公開済みのみ）
+ソース: dordb `mass.submission_status_history` テーブル（submission 単位のワークフロー状態）
 
-| Raw Status             | → record_status | → submission_stage | 備考 |
-| ---------------------- | --------------- | ------------------ | ---- |
-| Public                 | `live`          | null               |      |
-| Permanently Suppressed | `suppressed`    | null               |      |
-| Withdrawn              | `withdrawn`     | null               |      |
+| Raw Status                       | → record_status | → submission_stage   | 備考                     |
+| -------------------------------- | --------------- | -------------------- | ------------------------ |
+| 0 (created)                      | `unpublished`   | `draft`              |                          |
+| 10-60 (submit → validate → load) | `unpublished`   | `submitted`          | 自動処理パイプライン     |
+| 100-130 (errors)                 | `unpublished`   | `revision_requested` | 処理エラーによる差し戻し |
+| 200 (validated)                  | `unpublished`   | `in_curation`        |                          |
+| 210 (curating)                   | `unpublished`   | `in_curation`        |                          |
+| 220-240 (accession → data load)  | `unpublished`   | `accepted`           | accession 発行以降       |
+| 250 (data error)                 | `unpublished`   | `revision_requested` | データロードエラー       |
+| 260 (private)                    | `unpublished`   | `accepted`           | hold 期間中              |
+| 270 (wait release)               | `unpublished`   | `accepted`           | 公開待ち                 |
+| 300 (public)                     | `live`          | `accepted`           |                          |
+| 400 (canceled)                   | `canceled`      | null                 |                          |
+| 410 (suppressed)                 | `suppressed`    | `accepted`           |                          |
+| 420 (killed)                     | `withdrawn`     | `accepted`           |                          |
+
+注: livelist ファイルは公開済みデータのみ含む（Public / Permanently Suppressed / Withdrawn）。record-idm は dordb を正規ソースとし、未公開分を含む全ライフサイクルをカバーする。
 
 ### JGA
 
@@ -154,4 +191,4 @@ JGA と同じ構成。
 
 ## Relation
 
-TODO: accession 間の関係性（BioProject を頂点とする DAG、`replaced_by` 等）のモデルを定義する。
+accession 間の関係性（BioProject を頂点とする DAG、各リポジトリ間・内部の edge 定義）は [relations.md](./relations.md) を参照。
